@@ -10,7 +10,7 @@ import ResultsPage from "./components/ResultsPage";
 export type RootStackParamList = {
   "EnterNames": undefined; // No parameters for NameForm
   "ScanReceipt": undefined; // No parameters for ReceiptScanner
-  ResultsPage: { receiptData: Array<{ quantity: number; dishName: string; price: number }> }; // Pass parsed receipt data to ResultsPage
+  ResultsPage: { receiptData: Array<{ quantity: number; dishName: string; price: number }>, total: number | null }; // Pass parsed receipt data to ResultsPage
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -19,20 +19,20 @@ const App: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="EnterNames">
-        <Stack.Screen 
-          name="EnterNames" 
-          component={NameForm} 
-          options={{ title: "Enter Names" }} 
+        <Stack.Screen
+          name="EnterNames"
+          component={NameForm}
+          options={{ title: "Enter Names" }}
         />
-        <Stack.Screen 
-          name="ScanReceipt" 
-          component={ReceiptScanner} 
-          options={{ title: "Scan Receipt" }} 
+        <Stack.Screen
+          name="ScanReceipt"
+          component={ReceiptScanner}
+          options={{ title: "Scan Receipt" }}
         />
-        <Stack.Screen 
-          name="ResultsPage" 
-          component={ResultsPage} 
-          options={{ title: "Receipt Results" }} 
+        <Stack.Screen
+          name="ResultsPage"
+          component={ResultsPage}
+          options={{ title: "Receipt Results" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -48,7 +48,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   container: {
-    flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',

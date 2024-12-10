@@ -9,10 +9,14 @@ interface ReceiptItem {
   dishName: string;
   price: number;
 }
+interface ParsedReceipt {
+  items: ReceiptItem[];
+  totalAmount: number | null;
+}
 
 const ReceiptScanner: React.FC = ({ navigation }: any) => {
   const [scannedImage, setScannedImage] = useState<string | null>(null);
-  const [parsedData, setParsedData] = useState<ReceiptItem[]>([]);
+  const [parsedData, setParsedData] = useState<ParsedReceipt | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false); // Loader state
 
   // Function to request permissions for the media library and camera
@@ -64,10 +68,10 @@ const ReceiptScanner: React.FC = ({ navigation }: any) => {
     try {
       const { data: { text } } = await Tesseract.recognize(image, "eng");
       console.log("Raw OCR Text:", text);
-      const extractedItems = parseReceiptText(text);
-      console.log('extractedItems', extractedItems);
-      
-      setParsedData(extractedItems);
+      const extractedData = parseReceiptText(text); // Get both items and totalAmount
+      console.log('extractedData:', extractedData);
+
+      setParsedData(extractedData); // Set parsedData directly
     } catch (error) {
       Alert.alert("Error", "OCR failed. Please try again.");
       console.error(error);
@@ -77,36 +81,43 @@ const ReceiptScanner: React.FC = ({ navigation }: any) => {
   };
 
   // Function to parse the OCR text and extract the relevant information
-  const parseReceiptText = (rawText: string): Array<{ quantity: number; dishName: string; price: number }> => {
+  const parseReceiptText = (rawText: string): { items: Array<{ quantity: number; dishName: string; price: number }>; totalAmount: number | null; } => {
     const lines = rawText.split("\n"); // Split the OCR text into lines
     const items: Array<{ quantity: number; dishName: string; price: number }> = [];
-  
+    let totalAmount: number | null = null;
+
     for (const line of lines) {
       console.log("Processing Line:", line); // Log each line being processed
       // Regex for matching "quantity dishName price" format (with optional spaces)
-      const match = line.match(/(\d+)\s+([a-zA-Z\s]+)\s+\$?([\d,]+\.\d{2})/); 
-  
+      const match = line.match(/(\d+)\s+([a-zA-Z\s]+)\s+\$?([\d,]+\.\d{2})/);
+
       if (match) {
         console.log("Matched Line:", line); // Log the matched line
-  
+
         // Extract quantity, dish name, and price
         const quantity = parseInt(match[1], 10);
         const dishName = match[2].trim();
         const price = parseFloat(match[3].replace(',', ''));
-  
+
         items.push({ quantity, dishName, price });
       }
+      const totalMatch = line.match(/total[:\s]*\$?([\d,]+\.\d{2})/i);
+
+      if (totalMatch) {
+        console.log("Matched Total Line:", line); // Log the line where total was found
+        totalAmount = parseFloat(totalMatch[1].replace(',', ''));
+      }
     }
-  
-    return items;
+
+    return { items, totalAmount };
   };
 
   // Navigate to ResultsPage and pass the parsed data
   const goToResultsPage = (): void => {
-    if (parsedData.length > 0) {
-        navigation.navigate("ResultsPage", { receiptData: parsedData });
+    if (parsedData) {
+      navigation.navigate("ResultsPage", { receiptData: parsedData.items, total: parsedData.totalAmount });
     } else {
-        Alert.alert("Error", "No items detected in the receipt.");
+      Alert.alert("Error", "No items detected in the receipt.");
     }
   };
 
@@ -116,12 +127,12 @@ const ReceiptScanner: React.FC = ({ navigation }: any) => {
       {scannedImage && (
         <>
           <Image source={{ uri: scannedImage }} style={styles.image} />
-          
+
           {/* Display a loader if the receipt is being processed */}
           {isProcessing ? (
             <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
           ) : (
-            <Button title="Proceed to Results" onPress={goToResultsPage} disabled={parsedData.length === 0} />
+            <Button title="Proceed to Results" onPress={goToResultsPage} disabled={!parsedData} />
           )}
         </>
       )}

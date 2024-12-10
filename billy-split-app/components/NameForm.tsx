@@ -55,7 +55,9 @@ const NameListComponent: React.FC<{ navigation: any }> = ({ navigation }) => {
         />
         <Button title="Add Name" onPress={addNameToList} />
       </View>
-      <Button title="Next Page" onPress={goToNextPage} color="#007BFF" />
+      {nameList.length >= 2 &&
+        <Button title="Next Page" onPress={goToNextPage} color="#007BFF" />
+      }
     </View>
   );
 };
